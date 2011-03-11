@@ -1,0 +1,67 @@
+
+div#navigation {
+    margin: 0 5px 0 0;
+    float: left;
+    text-align: left;
+    width: 194px;
+    font: sans-serif;
+}
+
+div#navigation h2 {
+	margin-top: 0px; 
+	margin-bottom: 20px; 
+	border-bottom: medium solid rgb(102, 102, 153); 
+	width: 170px;
+		
+}
+
+div#navigation ul {
+		padding: 0;
+		margin: 0;
+}
+
+div#navigation ul li {
+		list-style: none;
+		padding: 0;
+		padding-bottom: 5px;
+}
+
+div#navigation ul li a {
+	  
+    width: 174px;
+    height: 39px;
+    text-indent: -1999px;
+    display: block;
+}
+
+div#navigation ul li a:HOVER{
+		background-position: -183px 0px;
+}
+
+
+
+
+
+#bede-btn {
+	background: url("/Shiniest/public/img/Buttons/bede-btn.png") no-repeat;
+}
+
+#panda-btn {
+    background: url("/Shiniest/public/img/Buttons/panda-btn.png") no-repeat scroll;
+}
+
+#squashy-hedgehog-btn {
+	background: url("/Shiniest/public/img/Buttons/squashy_hedgehog-btn.png") no-repeat;
+}
+
+#squashy-hedgehog-btn {
+    background: url("/Shiniest/public/img/Buttons/squashy_hedgehog-btn.png") no-repeat scroll;
+}
+
+#kimberley-btn {
+    background: url("/Shiniest/public/img/Buttons/kimberley-btn.png") no-repeat scroll;
+}
+
+#bug-btn {
+    background: url("/Shiniest/public/img/Buttons/bug-btn.png") no-repeat scroll;
+}

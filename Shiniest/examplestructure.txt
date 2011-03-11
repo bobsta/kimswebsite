@@ -1,0 +1,34 @@
+webapp.war
+	|-- images/
+	|   `-- banner.jpg
+	|-- index.html
+	|-- jsps/
+	|   |-- public/
+	|   |   `-- login.jsp
+	|   `-- private/
+	|       |-- application.jsp
+	|       `-- settings.jsp
+	`-- WEB-INF/
+	    |-- lib/
+	    |   `-- some-library.jar
+	    |-- classes/
+	    |   `-- compiled.class
+	    `-- web.xml
+	    
+web.dir:            /media/storage/workspaces/Shinier/Shiniest/web
+
+build.resource.dir: /media/storage/workspaces/Shinier/Shiniest/build
+war.dir:            /media/storage/workspaces/Shinier/Shiniest/build/war
+war.file:           /media/storage/workspaces/Shinier/Shiniest/build/war/Shiniest
+build.webinf:       /media/storage/workspaces/Shinier/Shiniest/build/war/Shiniest/WEB-INF
+build.classes:      /media/storage/workspaces/Shinier/Shiniest/build/war/Shiniest/WEB-INF/classes
+
+CSS
+ID #
+Class .
+
+
+003333 - Teal
+CCCC99 - Beige
+666699 - Purple
+003366 - Blue

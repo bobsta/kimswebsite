@@ -1,0 +1,894 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ This is the main Ant build file for the OPermit project
+ Date: 25/7/07
+ Author: J.P.Ide
+	-> Changed A.W.P 15/10/07
+-->
+<project name="OPermit" default="compile" basedir="..">
+
+
+
+
+
+	<!-- This file contains all of the properties specific to each developers
+	   environment. The local.properties file should not be put into subversion
+	   (i.e. it should be added to the svn:ignore list).
+	   This allows properties such as the deployment directory to be defined
+	   independently for each developer.
+	   The properties currently defined in this file are:
+	   1. webapps.deploy.dir ==> The deployment directory of the local web server instance
+	   2. local.fitnesse.dir ==> The directory for deployment of locally-running FitNesse server
+	   		[used by create-fit-jar and deploy-fitnesse-environment]
+  -->
+	<property file="${basedir}/build/local.properties" />
+
+
+	<!-- This is the exploded war file location & should be removed before
+  		 the war is created  -->
+	<!-- <property name="webapps.deploy" value="C:\jakarta-tomcat-5.0.28\webapps\OPermit" /> -->
+
+	<!-- Define a temporary directory, based on the system temporary directory,
+       the user name, and the project name (defined above) -->
+	<property name="tmpdir" value="${java.io.tmpdir}/${user.name}/${ant.project.name}" />
+
+	<!-- Main resource directory. Includes all resource files required
+			 by the application such as web flow definition, hibernate mappings
+			 and Spring bean definitions
+		 -->
+	<property name="resource.dir" value="${basedir}/src/main/resource" />
+
+	<!-- The temporary installation directory where all war-files
+       are collected  -->
+	<property name="install.fulldir" value="${tmpdir}/install" />
+	<!-- And finally, the directory where the final .war -file is put -->
+	<property name="release.dir" value="${basedir}/dist" />
+	<!-- Main source code directory-->
+	<property name="src.dir" value="${basedir}/src/main/java" />
+
+	<!-- Root source folder containing all Web resources such as
+		 a template WEB-INF folder and a public property folder.
+	-->
+	<property name="web.dir" value="${basedir}/web" />
+
+	<!-- The lib folder within the WEB-INF diectory of the
+		 source code
+	-->
+	<property name="src.lib" value="${web.dir}/WEB-INF/lib" />
+
+
+	<!-- build.resource.dir -->
+	<!--
+		Directory which contains the resources used by the build process
+	-->
+	<property name="build.resource.dir" value="${basedir}/build" />
+
+	<!-- build.libr -->
+	<!--
+		Directory which contains the libraries used during the build/test
+	-->
+	<property name="build.lib" value="${build.resource.dir}/build-lib" />
+
+	<!--  build.dir -->
+	<!--
+		The main build directory. A directory is created within the
+		build directory and all resources and source code are copied
+		here in order to create the .war file.
+	-->
+	<property name="war.dir" value="${build.resource.dir}/war" />
+
+	<!-- build.config.dir -->
+	<!--
+		The directory which contains configuration files used during the build
+	-->
+	<property name="build.config.dir" value="${build.resource.dir}/config" />
+
+	<property name="build.dir" value="${war.dir}/OPermit" />
+
+	<property name="war.file" value="${release.dir}/OPermit.war" />
+
+	<property name="ear.resource.dir" value="${build.config.dir}/ear" />
+	<property name="ear.file" value="${release.dir}/OPermit.ear" />
+
+	<property name="analysisParams.file" value="${resource.dir}/parameters.properties" />
+
+	<!-- The WEB-INF directory within the build folder -->
+	<property name="build.webinf" value="${build.dir}/WEB-INF" />
+
+	<!-- The classes directory within the WEB-INF folder -->
+	<property name="build.classes" value="${build.webinf}/classes" />
+
+	<!-- Test directories -->
+	<property name="tests.build" value="${build.resource.dir}/tests" />
+	<property name="tests.src" value="${basedir}/src/test/java" />
+	<property name="tests.resource" value="${basedir}/src/test/resource" />
+
+	<!-- FIT tests config -->
+	<property name="fit.dir" value="${basedir}/fit" />
+	<property name="fit.jar.file" value="${fit.dir}/OPermitFIT.jar" />
+	<property name="fitnesse.zip.file" value="${fit.dir}/tools/FitNesse.zip" />
+	<property name="fit.prop.file" value="fitversion.properties" />
+	<property name="fit.version.file" value="${tests.build}/${fit.prop.file}" />
+	<property name="fit.version.input.file" value="${fit.dir}/${fit.prop.file}" />
+	<!-- FitNesse properties for use in CruiseControl -->
+	<property name="fitnesse.root.dir" location="${fit.dir}/fitnesse" />
+	<property name="fitnesse.log.dir" location="${fitnesse.root.dir}/logs" />
+	<property name="fitnesse.output.dir" location="${fitnesse.root.dir}/output" />
+	<property name="dir.containing.FitNesseRoot.dir" location="${fitnesse.root.dir}/files/FitNesse" />
+	<property name="Fitnesse.Test.Page.Path" value="TransitTests.BaselineTests" />
+
+	<!-- Version Property -->
+	<!--
+		Contains the version number to be used in a version.html
+	-->
+	<property file="${build.config.dir}/version/version.properties" />
+
+	<!--  PATH DEFINITIONS -->
+	<!-- The base path for compilation.  We include, of course, the
+	       already built files in the build-directory, and then we
+	       add all the jar files in the "lib" -directory and sub-directories
+	       ** matches all directories ; * matches files ? matches character
+	 -->
+	<path id="project.lib.path">
+		<fileset dir="${src.lib}">
+			<include name="**/*.jar" />
+			<include name="*.jar" />
+			<include name="*.lic"/>
+		</fileset>
+	</path>
+
+	<path id="test.lib.path">
+		<fileset dir="${build.lib}">
+			<include name="*.jar" />
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+	<!-- Project Metrics And Documentation -->
+	<!--
+		Properties used for defining project metrics and documentation areas
+	-->
+	<property name="stats.dir" value="${build.resource.dir}/stats" />
+
+	<!-- The following three properties define the location of the
+       test reports and data, the location -->
+	<property name="test.reports" value="${stats.dir}/test/reports" />
+	<property name="test.data" value="${stats.dir}/test/data" />
+	<property name="test.metric.reports" value="${stats.dir}/test/metric/reports" />
+
+
+	<!-- Cobertura -->
+	<!--
+		Properties used for the cobertura code coverage tools
+	-->
+	<property name="cobertura.dir" value="${stats.dir}/cobertura" />
+	<property name="cobertura.instrumented.dir" value="${cobertura.dir}/instrumented" />
+	<property name="cobertura.data.file" value="cobertura.ser" />
+	<!-- This must point to default location for cobertura -->
+	<property name="cobertura.results.dir" value="${cobertura.dir}/results" />
+
+	<!-- PMD -->
+	<!--
+		PMD - scans Java source code and looks for potential problems
+	-->
+	<property name="pmd.dir" value="${build.config.dir}/pmd" />
+	<property name="pmd.rule.file" value="${pmd.dir}/transit-ruleset.xml" />
+	<property name="pmd.results.dir" value="${stats.dir}/pmd" />
+	<property name="pmd.results.file" value="${pmd.results.dir}/pmd-results.xml" />
+	<property name="pmd.results.style" value="${pmd.dir}/xslt/pmd-report-per-class.xslt" />
+	<property name="pmd.report.file" value="${pmd.results.dir}/pmd-report.html" />
+
+	<!-- Checkstyle -->
+	<!--
+		Checkstyle - checking Java code for adherance to coding standards
+	-->
+	<property name="checkstyle.dir" value="${build.config.dir}/checkstyle" />
+	<property name="checkstyle.config.file" value="${checkstyle.dir}/transit-checks.xml" />
+	<property name="checkstyle.results.style" value="${checkstyle.dir}/xslt/checkstyle-details.xsl" />
+	<property name="checkstyle.results.dir" value="${stats.dir}/checkstyle" />
+	<property name="checkstyle.results.xml" value="${checkstyle.results.dir}/checkstyle-result.xml" />
+	<property name="checkstyle.results.html" value="${checkstyle.results.dir}/checkstyle-result.html" />
+
+	<!-- Javadoc -->
+	<!--
+		Javadoc - directory where the javadoc can be found
+	-->
+	<property name="javadoc.dir" value="${stats.dir}/javadoc" />
+
+	<!-- SVN VERSION -->
+	<!--
+		Properties used in the svn versioning
+	-->
+	<property name="svn.version.dir" value="${build.config.dir}/version" />
+	<property name="svn.version.input.file" value="${svn.version.dir}/version.html" />
+	<property name="svn.version.output" value="${build.dir}/public/" />
+
+	<!-- Cobertura Task -->
+	<taskdef resource="tasks.properties" classpathref="test.lib.path" />
+	<!-- PMD Task -->
+	<taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="test.lib.path" />
+
+	<!-- DBUnit Task Definition -->
+	<taskdef name="dbunit" classname="org.dbunit.ant.DbUnitTask" classpathref="test.lib.path" />
+
+	<taskdef name="dbexport" classname="com.fronde.support.dbunit.DBUnitExport" classpathref="test.lib.path" />
+	<taskdef name="dbimport" classname="com.fronde.support.dbunit.DBUnitImport" classpathref="test.lib.path" />
+
+
+	<!-- Checkstyle Task -->
+	<taskdef resource="checkstyletask.properties" classpathref="test.lib.path" />
+
+	<!-- SVN Task -->
+	<taskdef resource="svntask.properties" classpathref="test.lib.path" />
+
+	<!-- Database JDBC Connection Parameters 	for DBUnit				-->
+	<property name="driver" value="net.sourceforge.jtds.jdbc.Driver" />
+	<property name="url" value="jdbc:jtds:sqlserver://wlg-trnsql01/OPermitReporting" />
+	<property name="user" value="sa" />
+	<property name="password" value="" />
+
+
+	<!-- Init -->
+	<!--
+		Initialising files and directories, preparing for a build
+	-->
+	
+	<property name="tomcat.dir" value="/opt/tomcat5_5" />
+	
+	<target name="local-deploy" depends="build-war">
+			<delete dir="${tomcat.dir}/webapps/OPermit" />
+		  <delete dir="${tomcat.dir}/logs/*" failonerror="false"/>
+			<copy file="${war.file}" todir="${tomcat.dir}/webapps/" overwrite="true" />
+	</target>
+	
+	<target name="init" description="Initializes everything, creates directories, etc.">
+
+		<!-- Create the directory in which to build the application -->
+		<mkdir dir="${build.dir}" />
+
+		<!-- Create the stat directory -->
+		<mkdir dir="${stats.dir}" />
+
+		<mkdir dir="${test.reports}" />
+
+		<!-- Create the test build directory -->
+		<mkdir dir="${tests.build}" />
+
+		<!--
+			Copy separately from other resource to allow version number to be included
+		-->
+		<copy todir="${build.webinf}/view/templates" file="${web.dir}/WEB-INF/view/templates/topHeader.jsp">
+			<filterset>
+				<filter token="PROJECT_VERSION" value="${project.version.number}" />
+			</filterset>
+		</copy>
+
+		<!--
+			Copy separately from other resource to allow version number to be included
+		-->
+		<copy todir="${build.dir}/public/" file="${web.dir}/public/login.jsp">
+			<filterset>
+				<filter token="PROJECT_VERSION" value="${project.version.number}" />
+			</filterset>
+		</copy>
+
+		<!-- Copy all from the web source folder into the build directory
+			 This will copy the 'WEB-INF' template folder and the 'Public' folder
+			 into the build directory folder structure
+		-->
+		<copy todir="${build.dir}">
+			<fileset dir="${web.dir}">
+				<include name="**/*" />
+				<exclude name="WEB-INF/ibm-web-bnd.xmi" />
+				<exclude name="WEB-INF/ibm-web-ext.xmi" />
+			</fileset>
+		</copy>
+
+		<!--
+			Copy separately from other resource to allow version number to be included
+		-->
+		<copy todir="${build.webinf}/view/templates" file="${web.dir}/WEB-INF/view/templates/header.jsp">
+			<filterset>
+				<filter token="PROJECT_VERSION" value="${project.version.number}" />
+			</filterset>
+		</copy>
+
+		<!-- Copy all resource components into the build WEB-INF directory-->
+		<copy todir="${build.webinf}">
+			<fileset dir="${resource.dir}" includes="**/*" excludes="*.*" />
+		</copy>
+
+		<!-- Create a 'classes' within the the WEB-INF folder of the build directory-->
+		<mkdir dir="${build.classes}" />
+
+		<!-- Copy resources to the classes folder -->
+		<copy todir="${build.classes}">
+			<fileset dir="${resource.dir}" includes="*.*" />
+		</copy>
+	</target>
+
+	<!-- Clean -->
+	<!--
+		Cleans all of the files/directories that will be created during a build
+	-->
+	<target name="clean">
+		<delete dir="${build.classes}" />
+		<delete dir="${build.webinf}" />
+		<delete dir="${build.dir}" />
+		<delete dir="${war.dir}" />
+		<delete dir="${tests.build}" />
+		<delete dir="${tests.build}" />
+		<delete dir="${stats.dir}" />
+	</target>
+
+	<!-- Compile -->
+	<!--
+		Compile the project java files and places them in the build.classes directory
+	-->
+	<target name="compile" depends="clean, init" description="Bulk of the compile code that is used by all build.xml files">
+		<javac srcdir="${src.dir}" destdir="${build.classes}" debug="true" source="1.5" target="1.5">
+			<classpath refid="project.lib.path" />
+		</javac>
+	</target>
+
+	<!-- compiletests -->
+	<!--
+		Compiles the tests java files and places them in the test.build directory
+	 -->
+	<target name="compiletests" depends="compile" description="Builds the test code.">
+		<javac srcdir="${tests.src}" destdir="${tests.build}" debug="true">
+			<classpath refid="project.lib.path" />
+			<classpath location="${build.classes}" />
+		</javac>
+
+		<!-- copy the resource files to the tests build folder -->
+		<copy todir="${tests.build}">
+			<fileset dir="${tests.resource}" includes="**/*" excludes="testenvironment.*"/>
+		</copy>
+	</target>
+
+	<!--  Installation targets 											-->
+	<!-- This target makes sure all the necessary directories exist
+       for building the installation package. -->
+	<target name="installinit">
+		<mkdir dir="${install.fulldir}" />
+		<delete dir="${install.src}" />
+		<mkdir dir="${install.src}" />
+		<mkdir dir="${release.dir}" />
+	</target>
+
+	<!--  Builds a Web Archive - basically a WAR file which
+        also contains all of the JSP pages and can be deployed
+        as-is.
+        The archive gets put in the ${dist} directory. The
+        reason for this is that this is just a temporary
+        step when building the entire distribution archive.
+   -->
+	<target name="build-war" description="Target to build war - used by all build.xml files" depends="compile">
+		<war warfile="${war.file}" webxml="${build.webinf}/web.xml">
+			<fileset dir="${build.dir}">
+				<include name="**/*" />
+				<exclude name="WEB-INF/web.xml" />
+				<exclude name="WEB-INF/lib/servlet-api.jar" />
+				<exclude name="WEB-INF/lib/jsp-api.jar" />
+				<exclude name="WEB-INF/lib/fit.jar" />
+				<exclude name="WEB-INF/lib/fit-library.jar" />
+				<exclude name="WEB-INF/lib/fitnesse.jar" />
+				<exclude name="WEB-INF/lib/easymock.jar.jar" />
+				<exclude name="WEB-INF/classes/parameters.properties" />
+			</fileset>
+		</war>
+	</target>
+
+	<!-- FIT jar -->
+	<!--
+		Builds a jar containing just the FIT tests and fitextras. For deployment with FitNesse Host.
+	-->
+	<target name="create-fit-jar" description="Create OPermitFIT.jar for release with FitNesse" depends="compiletests">
+		<!-- Update the FIT version num in jar -->
+		<copy tofile="${fit.version.file}" file="${fit.version.input.file}" overwrite="true">
+			<filterset>
+				<filter token="FIT_VERSION" value="${project.version.number}" />
+			</filterset>
+		</copy>
+
+		<jar destfile="${fit.jar.file}">
+			<fileset dir="${tests.build}">
+				<include name="**/fitfixtures/*.*" />
+				<include name="**/fitextras/*.*" />
+				<include name="**/*TestElementsDao.class" />
+				<include name="**/Mock*.*" />
+				<include name="**/Fake*.*" />
+				<include name="**/*Window.*" />
+				<include name="**/TestUtils.class" />
+				<include name="**/AnalysisReporterHelper.class" />
+				<include name="**/*FitAdvisor.class" />
+				<include name="config/*.*" />
+				<include name="${fit.prop.file}" />
+			</fileset>
+		</jar>
+
+		<!-- Assume that about to run FIT tests locally, so remove tests build dir to
+			show up any files that may be missing from jar. -->
+		<delete dir="${tests.build}" />
+		<!-- and deploy to correct dir. -->
+		<copy todir="${local.fitnesse.dir}" file="${fit.jar.file}" overwrite="true" />
+	</target>
+
+	<!-- FitNesse.zip -->
+	<!--
+		Build FitNesse.zip from FitNesse local directory, excluding
+		location-specific config files so that is ready for deployment.
+	-->
+	<target name="fitnesse-zip" description="Generate a new version of FitNesse.zip, ready for deployment." depends="create-fit-jar">
+		<zip destfile="${fitnesse.zip.file}" basedir="${local.fitnesse.dir}" />
+	</target>
+
+	<target name="deploy-fitnesse-environment" description="Used when setting up a new development environment only. Deploys baseline tests.">
+		<fail message="local.fitnesse.dir must be set in local.properties prior to running this target.">
+			<condition>
+				<equals arg1="${local.fitnesse.dir}" arg2="" />
+			</condition>
+		</fail>
+		<echo message="Creating FitNesse directory tree at local.fitnesse.dir (${local.fitnesse.dir})"/>
+		<mkdir dir="${local.fitnesse.dir}"/>
+		<echo message="Copying base FitNesse file structure from fit/fitnesse/files/FitNesse" />
+		<copy todir="${local.fitnesse.dir}">
+			<fileset dir="fit/fitnesse/files/FitNesse"></fileset>
+		</copy>
+		<echo message="Copying executables to FitNesse parent directory" />
+		<copy todir="${local.fitnesse.dir}/..">
+			<fileset dir="fit/tools">
+				<include name="run.*"/>
+			</fileset>
+		</copy>
+		<copy todir="${local.fitnesse.dir}/">
+			<fileset dir="fit/tools">
+				<include name="fitlibrary.jar"/>
+				<include name="fitnesse.jar"/>
+			</fileset>
+		</copy>
+		<echo message="Copying local testenvironment.properties" />
+		<copy todir="${local.fitnesse.dir}/../">
+			<fileset file="${tests.resource}/testenvironment.properties"></fileset>
+		</copy>
+
+		<echo message="FitNesse deployment complete." />
+		<echo message="Configure databases in ${local.fitnesse.dir}/../testenvironment.properties." />
+		<echo message="Edit one of the pages above the tests and include classpath information" />
+		<echo message="If on Windows, use run.bat at ${local.fitnesse.dir}/.." />
+		<echo message="If on unix use run.sh. You will need to 'chmod +x run.sh' first." />
+		<echo message="Run create-fit-jar to deploy a new version of OPermitFIT.jar locally during development." />
+	</target>
+
+	<!-- Running DbUnit Export (whole database) 								-->
+	<target name="export-all" depends="" description="Exports Data from Database to XML file (db_export.xml)">
+		<dbexport driver="${driver}" databaseurl="${url}" username="${user}" password="${password}" dest="${basedir}/src/test/resource/opermit-database.xml" />
+	</target>
+
+	<target name="import-all" description="Imports all the data for testing">
+		<dbimport driver="${driver}" databaseurl="${url}" username="${user}" password="${password}" src="src/test/resource/opermit-database.xml" />
+	</target>
+
+	<!-- Running DbUnit Partial Export of OPermit -->
+	<target name="export-partial" depends="" description="Partial Export of Selected Data from Database to XML file (db_partial.xml)">
+		<taskdef name="dbunit" classname="org.dbunit.ant.DbUnitTask" />
+		<dbunit driver="${driver}" url="${url}" userid="${user}" password="${password}">
+			<export dest="test/data/db_partial.xml">
+				<table name="AnalysisRunDataIdentifiers" />
+				<table name="AuditLogs" />
+				<table name="Axles" />
+				<table name="Companies" />
+				<table name="IssuedPermits" />
+				<table name="RefAxleTypes" />
+				<table name="RefPermitStatus" />
+				<table name="RefR1AxleWeights" />
+				<table name="RefR2R3AxleWeights" />
+				<table name="RefUnitTypes" />
+				<table name="RefVehicleTypes" />
+				<table name="Regions" />
+				<table name="Units" />
+				<table name="Users" />
+				<table name="Vehicles" />
+				<table name="VehicleUnitLink" />
+			</export>
+		</dbunit>
+	</target>
+
+	<!-- Running DbUnit No Ref Data - Partial Export of OPermit -->
+	<target name="export-partial-norefdata" depends="" description="No Ref Data - Partial Export of Selected Data from Database to XML file (db_partial.xml)">
+		<taskdef name="dbunit" classname="org.dbunit.ant.DbUnitTask" />
+		<dbunit driver="${driver}" url="${url}" userid="${user}" password="${password}">
+			<export dest="test/data/db_noref_partial.xml">
+				<table name="AnalysisRunDataIdentifiers" />
+				<table name="AuditLogs" />
+				<table name="Axles" />
+				<table name="Companies" />
+				<table name="IssuedPermits" />
+				<table name="PermitApplications" />
+				<table name="Units" />
+				<table name="Users" />
+				<table name="Vehicles" />
+				<table name="VehicleUnitLink" />
+			</export>
+		</dbunit>
+	</target>
+
+	<!-- Running DbUnit Refresh Only Non-Reference Tables  -->
+	<target name="refresh-non-ref" depends="" description="Updates Non-ref Tables from OPermit with data from XML file ">
+		<taskdef name="dbunit" classname="org.dbunit.ant.DbUnitTask" />
+		<dbunit driver="${driver}" url="${url}" userid="${user}" password="${password}">
+			<operation type="MSSQL_REFRESH" src="test/data/db_noref_partial.xml" />
+		</dbunit>
+	</target>
+
+	<!-- Running DbUnit Insert Non-Ref data-->
+	<target name="insert-non-ref" depends="" description="Inserts Non-Ref Data from XML file into OPermit">
+		<taskdef name="dbunit" classname="org.dbunit.ant.DbUnitTask" />
+		<dbunit driver="${driver}" url="${url}" userid="${user}" password="${password}">
+			<operation type="MSSQL_CLEAN_INSERT" src="test/data/db_noref_partial.xml" />
+		</dbunit>
+	</target>
+
+
+	<!-- Running DbUnit compare data with database non-ref tables -->
+	<target name="compare" depends="" description="Compares Data from XML file against OPermit - uses JUnit">
+		<taskdef name="dbunit" classname="org.dbunit.ant.DbUnitTask" />
+		<dbunit driver="${driver}" url="${url}" userid="${user}" password="${password}">
+			<compare src="test/data/db_noref_partial.xml" />
+		</dbunit>
+	</target>
+
+	<!-- Running DbUnit Delete all non-ref data -->
+	<target name="delete-nonref_data" depends="" description="Delete Non-ref Data from OPermit based on data in file">
+		<taskdef name="dbunit" classname="org.dbunit.ant.DbUnitTask" />
+		<dbunit driver="${driver}" url="${url}" userid="${user}" password="${password}">
+			<compare src="test/data/db_noref_partial.xml" />
+		</dbunit>
+	</target>
+
+	<!-- svn-version -->
+	<!--
+		Retrieves the current svn version of the checkout information
+	-->
+	<target name="svn-version" description="Builds a svn version page to identify the build">
+		<svn>
+			<status path="${basedir}" textStatusProperty="svn.txt.status" revisionProperty="svn.revision.prop" propStatusProperty="svn.prop.status" lastChangedRevisionProperty="svn.lastcommit.revision" lastCommitAuthorProperty="svn.lastcommit.author" />
+		</svn>
+		<copy todir="${svn.version.output}" file="${svn.version.input.file}" overwrite="true">
+			<filterset>
+				<filter token="PROJECT_VERSION" value="${project.version.number}" />
+				<filter token="SVN_TEXT_STATUS" value="${svn.txt.status}" />
+				<filter token="SVN_REVISION_PROP" value="${svn.revision.prop}" />
+				<filter token="SVN_PROP_STATUS" value="${svn.prop.status}" />
+				<filter token="SVN_LAST_COMMIT_REVISION" value="${svn.lastcommit.revision}" />
+				<filter token="SVN_LAST_COMMIT_AUTHOR" value="${svn.lastcommit.author}" />
+			</filterset>
+		</copy>
+	</target>
+
+
+	<!-- test -->
+	<!--
+		This target runs the JUnit tests that are available
+       in the src code.
+       It generates the test result files
+       into the ${tests.reports} -directory, one file per
+       each tested class.  The tests are generated in
+       plain text, but you can easily get XML format results
+       as well, just by setting the formatter, below.
+       Only tests that end with "*Test.java" are included.
+       This runs the tests in text mode.  -->
+	<target name="test" depends="compile, compiletests" description="Runs the JUnit tests">
+
+		<junit errorproperty="test-failed" failureProperty="test-failed" maxmemory="256M" fork="true" forkmode="once" haltonerror="false" haltonfailure="false">
+
+			<classpath path="${build.classes}" />
+			<classpath path="${tests.build}" />
+
+			<classpath path="${resource.dir}" />
+			<classpath path="${tests.resource}" />
+			<classpath path="${src.dir}" />
+			<classpath path="${tests.src}" />
+
+
+			<classpath refid="project.lib.path" />
+			<classpath refid="test.lib.path" />
+
+			<formatter type="brief" usefile="false" />
+			<formatter type="xml" />
+
+			<test name="${testcase}" todir="${test.reports}" if="testcase" />
+
+			<batchtest todir="${test.reports}" unless="testcase">
+				<fileset dir="${tests.build}">
+					<include name="**/*Test.class" />
+					<exclude name="**/AllTest*.class" />
+				</fileset>
+			</batchtest>
+		</junit>
+
+		<!-- Fail the build if any of the unit tests failed -->
+		<fail message="Tests failed: check test reports." if="test-failed" />
+	</target>
+
+	<!-- test-coverage -->
+	<!--
+		Runs the unit test against Coberture code coverage tool.
+		Should be run as a replacement to target="test", not along side
+		Instruments classes using Cobertura, then runs unit tests to check code coverage
+	-->
+	<target name="test-coverage" depends="compile, compiletests" description="Instruments classes using Cobertura, then runs unit tests to check code coverage">
+
+		<delete dir="${cobertura.instrumented.dir}" />
+		<delete file="${cobertura.data.file}" />
+
+		<!-- Instrument production classes into the ${build.instr.dir} directory -->
+		<cobertura-instrument todir="${cobertura.instrumented.dir}">
+			<fileset dir="${build.classes}">
+				<include name="**/*.class" />
+			</fileset>
+		</cobertura-instrument>
+
+		<!-- Delete then recreate test results directory -->
+		<delete dir="${test.reports}" />
+		<mkdir dir="${test.reports}" />
+
+		<!-- Run JUnit tests and set property if failed -->
+		<junit errorproperty="test-failed" failureProperty="test-failed" fork="true" forkmode="once" maxmemory="256M" haltonerror="false" haltonfailure="false">
+
+			<!--
+				Currently causes issues with reporting,
+				data file must be created in default location
+			-->
+			<sysproperty key="net.sourceforge.cobertura.datafile" file="${cobertura.data.file}" />
+
+			<classpath path="${cobertura.instrumented.dir}" />
+			<!-- This must appear before compile classes -->
+
+			<classpath path="${build.classes}" />
+			<classpath path="${tests.build}" />
+
+
+			<classpath path="${resource.dir}" />
+			<classpath path="${tests.resource}" />
+
+			<classpath path="${src.dir}" />
+			<classpath path="${tests.src}" />
+
+			<classpath refid="project.lib.path" />
+			<classpath refid="test.lib.path" />
+
+			<formatter type="brief" usefile="false" />
+			<formatter type="xml" />
+
+			<!-- Allows testing of named testcases -->
+			<test name="${testcase}" todir="${test.reports}" if="testcase" />
+
+			<!-- Run all test cases if a specific test case was not included -->
+			<batchtest todir="${test.reports}" unless="testcase">
+				<fileset dir="${tests.build}">
+					<include name="**/*Test.class" />
+					<exclude name="**/AllTest*.class" />
+				</fileset>
+			</batchtest>
+		</junit>
+
+		<delete dir="${cobertura.results.dir}" />
+		<cobertura-report format="html" srcdir="${src.dir}" destdir="${cobertura.results.dir}">
+		</cobertura-report>
+
+		<delete file="${cobertura.data.file}" />
+
+		<!-- Fail the build if any of the unit tests failed -->
+		<fail message="Tests failed: check test reports." if="test-failed" />
+
+
+	</target>
+	<!-- END TARGET - test-coverage -->
+
+	<!-- depends -->
+	<!--
+		Quality Code Metrics Check for Software
+	-->
+	<target name="jdepends" depends="" description="Runs the jdepends check on the source code">
+		<jdepend outputfile="${test.metric.reports}/jdepend.txt">
+			<classespath>
+				<pathelement location="web/WEB-INF/classes" />
+			</classespath>
+		</jdepend>
+	</target>
+
+	<!-- pmd -->
+	<!--
+		Compiles code and runs PMD code checks
+	-->
+	<target name="pmd" description="Runs PMD code checks" depends="compile">
+		<mkdir dir="${pmd.results.dir}" />
+
+		<pmd shortfilenames="true" failonerror="false" failurespropertyname="pmd.failure" rulesetfiles="${pmd.rule.file}">
+			<formatter type="xml" toFile="${pmd.results.file}" />
+			<fileset dir="${src.dir}" includes="**/*.java" />
+		</pmd>
+
+		<xslt style="${pmd.results.style}" in="${pmd.results.file}" out="${pmd.report.file}" />
+	</target>
+
+	<!-- checkstyle -->
+	<!--
+		Runs Checkstyle checks on code
+	-->
+	<target name="checkstyle" description="Runs Checkstyle code checks" xmlns:cs="antlib:com.puppycrawl.tools.checkstyle">
+
+		<mkdir dir="${checkstyle.results.dir}" />
+
+		<checkstyle config="${checkstyle.config.file}" failOnViolation="false" failureProperty="checkstyle.failure">
+			<fileset dir="${src.dir}" includes="**/*.java" />
+			<classpath refid="project.lib.path"/>
+			<classpath>
+			    <path path="${build.classes}"/>
+			</classpath>
+			<formatter type="xml" toFile="${checkstyle.results.xml}" />
+		</checkstyle>
+
+		<xslt style="${checkstyle.results.style}" in="${checkstyle.results.xml}" out="${checkstyle.results.html}" />
+	</target>
+
+	<!-- javadoc -->
+	<!--
+		Compiles the javadoc for the project
+	-->
+	<target name="javadoc" description="Produces javadoc for the project">
+		<javadoc sourcepath="${src.dir}" destdir="${javadoc.dir}" classpathref="project.lib.path" />
+	</target>
+
+	<!-- CruiseControl -->
+	<!--
+		CruiseControl - kicks off cruise control specific build, which involves:
+			clean - remove all generated files
+			build-war - Build the projects war file
+			test-coverage - Run test including the cobetura code coverage tools
+			pmd - Run the code metrics/style checker
+			checkstyle - Run the code style checker
+			javadoc - produce java documentation
+			svn-version - produce a version.html page which output svn status variables
+
+			copying to cruisecontrol directory
+	-->
+	<target name="CruiseControl" depends="clean, build-war, test-coverage, pmd, checkstyle, javadoc, svn-version, fitnesse-baseline, websphere-ear" description="Runs a CruiseControl build which preforms the tasks involved in a cruisecontrol build">
+
+		<!-- Remove any previous stats directory -->
+		<delete dir="${cruisecontrol.project.web.dir}" quiet="true" />
+
+		<!-- Copy project stats to a cruisecontrol web directory -->
+		<copy todir="${cruisecontrol.project.web.dir}" overwrite="true">
+			<fileset dir="${stats.dir}">
+				<!-- exclude files cruisecontrol currently can handle -->
+				<exclude name="test/**" />
+				<exclude name="checkstyle/**" />
+				<exclude name="pmd/**" />
+			</fileset>
+		</copy>
+
+	</target>
+
+	<!-- Websphere-ear -->
+	<!--
+		Generate a websphere specific ear file ready for deployment.
+		Uses the generated war file and packages it with websphere specific
+		configuration files to produce a rapid deployable ear file.
+		Places it in the release.dir directory
+	-->
+	<target name="websphere-ear" depends="build-war">
+		<echo message="${ear.resource.dir}" />
+		<jar destfile="${ear.file}">
+
+			<fileset dir="${ear.resource.dir}" />
+
+			<fileset file="${war.file}" />
+		</jar>
+	</target>
+
+	<target name="websphere-ear-unenhanced" depends="build-war">
+		<jar destfile="${ear.file}">
+			<fileset dir="${ear.resource.dir}">
+				<include name="META-INF/application.xml" />
+			</fileset>
+
+			<fileset file="${war.file}" />
+		</jar>
+	</target>
+
+	<target name="dist" depends="build-war">
+		<delete dir="${release.dir}/package" />
+		<mkdir dir="${release.dir}/package" />
+
+		<copy file="${war.file}" todir="${release.dir}/package" />
+		<copy todir="${release.dir}/package/database">
+			<fileset dir="database/" includes="**/*" />
+		</copy>
+		<copy todir="${release.dir}/package/word-resources">
+			<fileset dir="word-resources/" includes="**/*" />
+		</copy>
+		
+		<copy file="${analysisParams.file}" todir="${release.dir}/package" />
+
+		<zip basedir="reporting/logi-reports" includes="**/*" zipfile="${release.dir}/package/opermit-reporting.zip" />
+		<zip basedir="reporting/OPReports" includes="**/*" zipfile="${release.dir}/package/OPReports.zip" />
+		<zip basedir="reporting/config/script" includes="**/*" zipfile="${release.dir}/package/OPReports_DF.zip" />
+		<zip basedir="reporting/config/webservice" includes="**/*" zipfile="${release.dir}/package/OPReportsWS.zip" />
+		
+		<zip basedir="${release.dir}/package" zipfile="${release.dir}/OPermit-${project.version.number}.zip" includes="**/*" />
+	</target>
+
+
+	<!-- FitNesse for CruiseControl -->
+	<!--
+		Launch FitNesse as a separate process from CruiseControl and get the
+		overall result as well as storing the output files. Fail the build if
+		the overall result is fail or exception.
+		To modify the data on this FitNesse server change the <sleep seconds= >
+		line to a suitably large number of seconds that will allow time to edit,
+		then open a browser at localhost:${fitnesse.port}. Don't forget to update
+		the package browser after edits and add any new files to svn.
+	-->
+	<target name="fitnesse-baseline" description="Run fitnesse acceptance tests.">
+		<property name="fitnesse.output.file" value="${fitnesse.output.dir}/fitnesse-test-results" />
+		<property name="fitnesse.port" value="8765" />
+		<path id="fitpath">
+			<!-- jars and source files to run -->
+			<filelist>
+				<file name="${src.lib}/fitnesse.jar" />
+			</filelist>
+			<fileset dir="${fitnesse.root.dir}">
+				<include name="**/lib/*.jar" />
+			</fileset>
+			<fileset dir="${src.lib}">
+				<include name="*.jar" />
+			</fileset>
+			<pathelement location="${build.classes}" />
+			<pathelement location="${build.webinf}" />
+			<pathelement location="${tests.build}" />
+	        <pathelement location="${fitnesse.root.dir}" />
+		</path>
+		<echo message="About to run fitnesse server" level="info" />
+		<parallel>
+			<daemons>
+				<java classname="fitnesse.FitNesse" classpath="${src.lib}/fitnesse.jar;${ant.home}/lib/xercesImpl.jar">
+					<arg value="-l" />
+					<arg value="${fitnesse.log.dir}" />
+					<arg value="-p" />
+					<arg value="${fitnesse.port}" />
+					<arg value="-e" />
+					<arg value="0" />
+					<arg value="-d" />
+					<arg value="${dir.containing.FitNesseRoot.dir}" />
+				</java>
+			</daemons>
+			<sequential>
+				<echo message="sleeping for 10 seconds to let FitNesse server start" level="info" />
+				<sleep seconds="10" />
+				<java classpathref="fitpath" classname="fitnesse.runner.TestRunner" fork="true" dir="${fitnesse.root.dir}" resultproperty="fit.test.failures" maxmemory="256m">
+					<arg value="-debug" />
+					<arg value="-xml" />
+					<arg value="${fitnesse.output.file}.xml" />
+					<arg value="-nopath" />
+					<arg value="localhost" />
+					<arg value="${fitnesse.port}" />
+					<arg value="${Fitnesse.Test.Page.Path}" />
+					<!-- Eg: FrontPage.TestSuite Please note that this page must exist else Fitnesse will execute System.exit(1) if it cannot find the page mentioned here -->
+				</java>
+				<replace file="${fitnesse.output.file}.html" token="&lt;base href=&quot;http://localhost:${fitnesse.port}/&quot;/>" />
+				<echo message="Finished FIT tests: ${fit.test.failures} failures/exceptions" level="info" />
+				<fail message="FIT test failures/exceptions: ${fit.test.failures}">
+					<condition>
+						<not>
+							<equals arg1="${fit.test.failures}" arg2="0" />
+						</not>
+					</condition>
+				</fail>
+				<!-- This will fail the build if the return code was not Zero, which means there were errors or exceptions -->
+			</sequential>
+		</parallel>
+	</target>
+</project>

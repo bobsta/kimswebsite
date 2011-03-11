@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ====================================================================== 
+     9/12/2010 11:53:03 AM                                                        
+
+     Shiniest    
+     description
+                   
+     bobsta                                                                
+     ====================================================================== -->
+<project name="Shiniest" default="local-deploy">
+    <description>
+            description
+    </description>
+
+
+	
+	<!-- Property's -->
+	<property name="project.name" value="Shiniest" />
+		
+	<property name="build.resource.dir" value="${basedir}/build" />
+	<property name="war.dir" value="${build.resource.dir}/war" />
+	<property name="build.dir" value="${war.dir}/${project.name}" />
+	
+
+	<property name="release.dir" location="${basedir}/dist"/>
+	<property name="war.file" value="${release.dir}/${project.name}.war" />
+	
+	<property name="web.dir" value="${basedir}/web" />
+		
+	<!-- The WEB-INF directory within the build folder -->
+		<property name="build.webinf" value="${build.dir}/WEB-INF" />
+
+		<!-- The classes directory within the WEB-INF folder -->
+		<property name="build.classes" value="${build.webinf}/classes" />
+	
+	
+	<!-- And finally, the directory where the final .war -file is put -->
+	<property name="release.dir" value="${basedir}/dist" />
+	<!-- Main source code directory-->
+	<property name="src.dir" value="${basedir}/src" />
+	<!-- The lib folder within the WEB-INF diectory of the
+		 source code
+	-->
+	<property name="src.lib" value="${web.dir}/WEB-INF/lib" />
+
+	<property name="tomcat.dir" value="/opt/tomcat5_5" />
+	
+	
+	<!-- Path Id -->
+	<path id="project.lib.path">
+			<fileset dir="${src.lib}">
+				<include name="**/*.jar" />
+				<include name="*.jar" />
+			</fileset>
+		</path>
+	
+	
+	
+	
+	<target name="local-deploy" depends="build-war">
+		<delete dir="${tomcat.dir}/webapps/${project.name}" />
+	  <delete dir="${tomcat.dir}/logs/*" failonerror="false"/>
+		<copy file="${war.file}" todir="${tomcat.dir}/webapps/" overwrite="true" />
+	</target>
+	
+	
+	<target name="build-war" description="Target to build war - used by all build.xml files" depends="compile">
+		<war warfile="${war.file}" webxml="${build.webinf}/web.xml">
+			<fileset dir="${build.dir}">
+				<include name="**/*" />
+				<exclude name="WEB-INF/web.xml" />
+				<exclude name="WEB-INF/lib/servlet-api.jar" />
+				<exclude name="WEB-INF/lib/jsp-api.jar" />
+			</fileset>
+		</war>
+	</target>
+	
+	
+	<!-- Compile -->
+	<!--
+		Compile the project java files and places them in the build.classes directory
+	-->
+	<target name="compile" depends="clean, init" description="Bulk of the compile code that is used by all build.xml files">
+		<javac srcdir="${src.dir}" destdir="${build.classes}" debug="true" ><!--source="1.5" target="1.5">-->
+			<classpath refid="project.lib.path" />
+		</javac>
+	</target>
+	
+	<!-- Clean -->
+	<!--
+		Cleans all of the files/directories that will be created during a build
+	-->
+	<target name="clean">
+		<delete dir="${build.classes}" />
+		<delete dir="${build.webinf}" />
+		<delete dir="${build.dir}" />
+		<delete dir="${war.dir}" />
+	</target>
+	
+	<target name="init" description="Initializes everything, creates directories, etc.">
+
+			<!-- Create the directory in which to build the application -->
+			<mkdir dir="${build.dir}" />
+
+			<!-- Copy all from the web source folder into the build directory
+				 This will copy the 'WEB-INF' template folder and the 'Public' folder
+				 into the build directory folder structure
+			-->
+			<copy todir="${build.dir}">
+				<fileset dir="${web.dir}">
+					<include name="**/*" />
+				</fileset>
+			</copy>
+
+			<!-- Create a 'classes' within the the WEB-INF folder of the build directory-->
+			<mkdir dir="${build.classes}" />
+		</target>
+	
+
+	
+	
+	<!-- Proves that ${basedir} is a special ant property -->
+	<target name="build.path">		
+				<echo message="build.resource.dir:	${build.resource.dir}" />		
+				<echo message="war.dir:							${war.dir}" />
+				<echo message="war.file: 						${build.dir}" />
+				<echo message="web.dir:							${web.dir}" />
+				<echo message="build.webinf: 				${build.webinf}" />
+				<echo message="build.classes: 			${build.classes}" />		
+		
+		    <echo message="File: ${basedir}${file.separator}build.xml"/>
+		    <echo message="Path: ${basedir}${file.separator}build.xml${path.separator}${basedir}${file.separator}build.properties"/>
+		  </target>
+</project>
